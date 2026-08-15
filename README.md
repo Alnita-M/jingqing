@@ -52,29 +52,35 @@
 
 ## 一键安装(推荐)
 
-鲸晴提供**一键安装助手**,不需要手动复制任何源码:
+鲸晴提供**一键安装**,不需要手动复制任何源码。获取项目后,**任选一种**方式:
 
+**Windows(双击即可):**
+```text
+1. 进入 release 目录
+2. 双击 install.bat(或命令行运行 install.bat)
+3. 安装消息自动复制到剪贴板 ✅
+4. 打开 DeepSeek Harness 任意会话 → 粘贴(Ctrl+V) → 回车
+5. AI 自动完成插件定义与激活 —— 安装完成 ✅
+```
+
+**macOS / Linux:**
 ```bash
-# 1. 获取项目(任选一种)
-git clone https://github.com/Alnita-M/jingqing.git
-# 或: 直接下载仓库 ZIP 并解压
+cd jingqing/release
+chmod +x install.sh
+./install.sh
+# 安装消息自动复制到剪贴板,然后在 DSH 会话中粘贴并回车即可
+```
 
-# 2. 进入 release 目录并运行安装助手
+**通用方式(Node.js 18+):**
+```bash
 cd jingqing/release
 node install.mjs
+# 同上:消息已复制到剪贴板 + 生成 INSTALL.md 备用
 ```
 
-安装助手会自动把完整的安装消息**复制到剪贴板**(同时生成 `INSTALL.md` 文件)。
-
-然后:
-
-```text
-1. 打开 DeepSeek Harness 任意会话
-2. 直接粘贴(Ctrl+V)并按回车
-3. AI 自动完成插件定义与激活 —— 安装完成 ✅
-```
-
-> 需要 Node.js 18+。Windows / macOS / Linux 均可(脚本会自动适配剪贴板命令)。
+> 三种方式都只做一件事:把完整的安装消息(含全部源码与步骤)复制到剪贴板。
+> 最后一步"在会话中粘贴回车"由 AI 完成定义与激活——这是 DSH 动态插件
+> 的设计(插件需经会话内 AI 与授权流程),无法完全脱离会话。
 
 ## 手动安装
 

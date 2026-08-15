@@ -5,12 +5,11 @@
 ## [1.0.1] - 2026-08-15
 
 ### 新增
-- **一键安装助手 `install.mjs`**：运行 `node install.mjs` 自动把完整安装消息
-  （含全部源码与步骤）复制到剪贴板并生成 `INSTALL.md`；用户粘贴到任意 DSH
-  会话即完成安装，无需手动复制源码
-  - 跨平台剪贴板适配（Windows PowerShell / macOS pbcopy / Linux xclip·xsel）
+- **一键安装助手**：`node install.mjs` 自动把完整安装消息复制到剪贴板并生成
+  `INSTALL.md`；新增 `install.bat`(Windows 双击即可)与 `install.sh`(macOS/Linux)
+  - 跨平台剪贴板适配(Windows PowerShell / macOS pbcopy / Linux xclip·xsel)
   - Windows 超长文本走临时文件管道，规避命令行 32K 长度限制
-- README 新增「一键安装(推荐)」章节
+- README 新增「一键安装(推荐)」章节(Windows / macOS·Linux / 通用三种入口)
 
 ## [1.0.0] - 2026-08-15
 
