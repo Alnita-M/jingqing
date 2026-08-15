@@ -2,7 +2,8 @@
 /**
  * 鲸晴 JingQing · 一键安装助手
  * ============================================================
- * 运行:  node install.mjs
+ * 运行:  node install.mjs     (仓库内)
+ *        npx jingqing-install (npm 包形式,发布后)
  *
  * 作用: 读取同目录下的 plugin-host.js / plugin-client.js(v1.0.0),
  *       生成一条【自包含安装消息】——包含全部源码与安装步骤,

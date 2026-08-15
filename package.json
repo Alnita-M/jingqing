@@ -1,0 +1,38 @@
+{
+  "name": "jingqing",
+  "version": "1.0.1",
+  "description": "鲸晴 JingQing - 让 DeepSeek Harness 纯文本模型也能识图：MiMo 识别 + 所选模型推理（动态 Cordis 插件 + 一键安装）",
+  "type": "module",
+  "main": "install.mjs",
+  "bin": {
+    "jingqing-install": "install.mjs"
+  },
+  "files": [
+    "install.mjs",
+    "plugin-host.js",
+    "plugin-client.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "vision",
+    "image-recognition",
+    "mimo",
+    "识图"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alnita-M/jingqing.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Alnita-M/jingqing/issues"
+  },
+  "homepage": "https://github.com/Alnita-M/jingqing"
+}

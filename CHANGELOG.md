@@ -5,11 +5,13 @@
 ## [1.0.1] - 2026-08-15
 
 ### 新增
+- **npm 一键安装**：新增 `package.json` 发布配置,`npx jingqing-install` 一条命令
+  即复制完整安装消息到剪贴板(已端到端验证 npm 包安装与 bin 运行)
 - **一键安装助手**：`node install.mjs` 自动把完整安装消息复制到剪贴板并生成
   `INSTALL.md`；新增 `install.bat`(Windows 双击即可)与 `install.sh`(macOS/Linux)
   - 跨平台剪贴板适配(Windows PowerShell / macOS pbcopy / Linux xclip·xsel)
   - Windows 超长文本走临时文件管道，规避命令行 32K 长度限制
-- README 新增「一键安装(推荐)」章节(Windows / macOS·Linux / 通用三种入口)
+- README 新增「一键安装(推荐)」章节(npm / Windows / macOS·Linux / 通用四种入口)
 
 ## [1.0.0] - 2026-08-15
 
