@@ -78,8 +78,10 @@ window.__ModuleLoader__.load({
 			".jq-log-event{flex:0 0 90px;color:var(--text-primary);font-weight:600;overflow:hidden;text-overflow:ellipsis}",
 			".jq-log-detail{color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;flex:1}",
 			".jq-placeholder{padding:16px;text-align:center;font-size:12px;color:var(--text-tertiary)}",
-			".jq-route-node{display:flex;align-items:center;gap:12px;padding:0 12px;height:34px;border:1px solid var(--border-l1);border-radius:6px;margin-bottom:8px;font-family:var(--font-mono);font-size:12px;cursor:grab;background:var(--bg-card)}",
+			".jq-route-node{display:flex;align-items:center;gap:12px;padding:0 12px;height:34px;border:1px solid var(--border-l1);border-radius:6px;margin-bottom:8px;font-family:var(--font-mono);font-size:12px;cursor:grab;background:var(--bg-card);transition:transform .22s ease,opacity .22s ease,border-color .15s ease,box-shadow .22s ease}",
 			".jq-route-node:hover{border-color:var(--brand)}",
+			".jq-route-node.jq-dragging{opacity:.45;border-color:var(--brand);cursor:grabbing;box-shadow:0 6px 16px rgba(16,24,40,.18);transform:scale(1.02);z-index:2}",
+			".jq-route-node.jq-drag-over{border-color:var(--brand);border-style:dashed;background:var(--brand-bg)}",
 			".jq-route-handle{color:var(--text-tertiary);margin-left:auto;flex:0 0 auto;font-size:14px;cursor:grab;user-select:none}",
 			".jq-route-num{width:16px;height:16px;border-radius:50%;background:var(--brand);color:#fff;font-size:10px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}",
 			".jq-route-arrow{text-align:center;color:var(--text-tertiary);font-size:12px;line-height:1;margin:-4px 0 4px}",
@@ -88,27 +90,43 @@ window.__ModuleLoader__.load({
 			".jq-error-box{background:var(--error-bg);border:1px solid var(--error);color:var(--error);border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:16px}",
 			".jq-error-box .jq-btn{margin-top:10px}"
 		].join("\n");
+		// CSS 注入:设置页打开前将样式表插入页面(与 dsh-usage-stats 同机制)
+		const cssTagId = "jingqing/JingQing.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=\"" + cssTagId + "\"]") === null) {
+			const tag = document.createElement("style");
+			tag.setAttribute("data-plugin-css", cssTagId);
+			tag.textContent = css;
+			document.head.append(tag);
+		}
 		//#endregion
 
 		//#region helpers
 		/** 静态 Client 数据通道:同源 fetch 调用 Host 的 /api/jingqing/* 端点 */
 		async function call(method, args) {
 			const path = "/api/jingqing/" + method.replace("jingqing/panel/", "");
+			let response;
 			if (method === "jingqing/panel/update" || method === "jingqing/panel/reset") {
-				const response = await fetch(path, {
+				response = await fetch(path, {
 					method: "POST",
 					headers: { "content-type": "application/json" },
 					body: JSON.stringify(args || {}),
 				});
-				return response.json();
-			}
-			if (method === "jingqing/panel/logs" && args) {
+			} else if (method === "jingqing/panel/logs" && args) {
 				const q = new URLSearchParams();
 				if (args.limit) q.set("limit", String(args.limit));
 				if (args.level && args.level !== "all") q.set("level", String(args.level));
-				return fetch(path + "?" + q.toString(), { headers: { accept: "application/json" } }).then((r) => r.json());
+				response = await fetch(path + "?" + q.toString(), { headers: { accept: "application/json" } });
+			} else {
+				response = await fetch(path, { headers: { accept: "application/json" } });
 			}
-			return fetch(path, { headers: { accept: "application/json" } }).then((r) => r.json());
+			const payload = await response.json();
+			// HTTP 端点统一返回 { ok, state } / { ok, logs };解包为组件期望的结构
+			if (payload && typeof payload === "object" && payload.ok === true) {
+				if (method === "jingqing/panel/logs") return { logs: payload.logs || [] };
+				if ("state" in payload) return payload.state;
+				return payload;
+			}
+			throw new Error((payload && payload.error) || ("HTTP " + response.status));
 		}
 		function fmtTime(ts) {
 			if (!ts) return "—";
@@ -128,15 +146,15 @@ window.__ModuleLoader__.load({
 		//#region cards
 		function LogCard(props) {
 			const [level, setLevel] = React.useState("all");
-			const [logs, setLogs] = React.useState(props.state ? props.state.logs : []);
-			React.useEffect(() => { setLogs(props.state ? props.state.logs : []); }, [props.state]);
+			const [logs, setLogs] = React.useState(Array.isArray(props.state && props.state.logs) ? props.state.logs : []);
+			React.useEffect(() => { setLogs(Array.isArray(props.state && props.state.logs) ? props.state.logs : []); }, [props.state]);
 			const refresh = () => {
 				call("jingqing/panel/logs", { limit: 100, level })
 					.then((res) => { if (res && Array.isArray(res.logs)) setLogs(res.logs); })
 					.catch(() => {});
 			};
 			React.useEffect(() => { refresh(); }, [level]);
-			const rows = logs.map((e, i) => React.createElement("div", { key: i, className: "jq-log-line" },
+			const rows = (logs || []).map((e, i) => React.createElement("div", { key: i, className: "jq-log-line" },
 				React.createElement("span", { className: "jq-log-time" }, String(e.t || "").slice(11, 19)),
 				React.createElement("span", { className: "jq-log-level jq-log-level-" + (e.level || "info") }, String(e.level || "").padEnd(5, " ")),
 				React.createElement("span", { className: "jq-log-event" }, String(e.event || "")),
@@ -185,7 +203,7 @@ window.__ModuleLoader__.load({
 				call("jingqing/panel/update", { patch })
 					.then((res) => {
 						if (res && res.error) { showToast("err", res.error); return; }
-						if (res && res.state) onState(res.state);
+						if (res && res.version) onState(res);
 						showToast("ok", "已生效");
 					})
 					.catch((e) => showToast("err", String(e && e.message ? e.message : e)));
@@ -253,7 +271,7 @@ window.__ModuleLoader__.load({
 						className: "jq-btn jq-btn-ghost",
 						onClick: () => {
 							call("jingqing/panel/reset", {}).then((res) => {
-								if (res && res.state) onState(res.state);
+								if (res && res.version) onState(res);
 								showToast("ok", "已恢复默认配置");
 							}).catch(() => {});
 						},
@@ -267,13 +285,41 @@ window.__ModuleLoader__.load({
 			const routes = (state && state.routes) || [];
 			const routeOrder = (state && state.config && state.config.routeOrder) || [];
 			const [dragKey, setDragKey] = React.useState(null);
+			const [overKey, setOverKey] = React.useState(null); // 当前悬停目标(虚线高亮)
 			const [localRoutes, setLocalRoutes] = React.useState(null);
+			const overKeyRef = React.useRef(null);
+			const rowRefs = React.useRef({}); // key -> DOM 元素(FLIP 测量用)
+			const prevTops = React.useRef({}); // key -> 上次 offsetTop(FLIP First 帧)
 			const list = localRoutes || routes;
 			const keyOf = (r) => routeKey(r.provider, r.id);
-			React.useEffect(() => { setLocalRoutes(null); setDragKey(null); }, [state]);
+			// state 变化(提交成功/启停/重扫)后丢弃本地拖拽态
+			React.useEffect(() => {
+				setLocalRoutes(null); setDragKey(null); setOverKey(null); overKeyRef.current = null;
+				prevTops.current = {};
+			}, [state]);
+			// FLIP 让位动画:重排后从旧位置平滑滑动到新位置
+			React.useEffect(() => {
+				const tops = {};
+				for (const key of Object.keys(rowRefs.current)) {
+					const el = rowRefs.current[key];
+					if (el) tops[key] = el.offsetTop;
+				}
+				for (const key of Object.keys(tops)) {
+					const prev = prevTops.current[key];
+					if (prev === undefined || prev === tops[key]) continue;
+					const el = rowRefs.current[key];
+					const dy = prev - tops[key];
+					el.style.transition = "none";
+					el.style.transform = "translateY(" + dy + "px)";
+					void el.offsetHeight; // 强制 reflow,让位移先生效
+					el.style.transition = "transform .22s ease";
+					el.style.transform = "translateY(0)";
+				}
+				prevTops.current = tops;
+			}, [list]);
 			const commitOrder = (ordered) => {
 				call("jingqing/panel/update", { patch: { routeOrder: ordered.map(keyOf) } })
-					.then((res) => { if (res && res.state) onState(res.state); setLocalRoutes(null); })
+					.then((res) => { if (res && res.version) onState(res); setLocalRoutes(null); })
 					.catch(() => setLocalRoutes(null));
 			};
 			const onDragStart = (e, key) => {
@@ -284,7 +330,9 @@ window.__ModuleLoader__.load({
 			const onDragOver = (e, key) => {
 				e.preventDefault();
 				e.dataTransfer.dropEffect = "move";
-				if (!dragKey || dragKey === key) return;
+				if (!dragKey || dragKey === key || overKeyRef.current === key) return;
+				overKeyRef.current = key;
+				setOverKey(key);
 				const from = list.findIndex((r) => keyOf(r) === dragKey);
 				const to = list.findIndex((r) => keyOf(r) === key);
 				if (from < 0 || to < 0) return;
@@ -293,9 +341,11 @@ window.__ModuleLoader__.load({
 				next.splice(to, 0, moved);
 				setLocalRoutes(next);
 			};
-			const onDrop = (e) => { e.preventDefault(); };
+			const onDrop = (e) => { e.preventDefault(); overKeyRef.current = null; setOverKey(null); };
 			const onDragEnd = () => {
+				overKeyRef.current = null;
 				setDragKey(null);
+				setOverKey(null);
 				if (localRoutes && localRoutes !== routes) commitOrder(localRoutes);
 				else setLocalRoutes(null);
 			};
@@ -305,8 +355,11 @@ window.__ModuleLoader__.load({
 				return React.createElement(React.Fragment, { key },
 					i > 0 && React.createElement("div", { className: "jq-route-arrow" }, "↓"),
 					React.createElement("div", {
-						className: "jq-route-node" + (dragKey === key ? " jq-dragging" : ""),
+						className: "jq-route-node" +
+							(dragKey === key ? " jq-dragging" : "") +
+							(overKey === key && dragKey !== key ? " jq-drag-over" : ""),
 						draggable: true,
+						ref: (el) => { if (el) rowRefs.current[key] = el; },
 						onDragStart: (e) => onDragStart(e, key),
 						onDragOver: (e) => onDragOver(e, key),
 						onDrop,
@@ -347,12 +400,12 @@ window.__ModuleLoader__.load({
 				const patch = {};
 				patch[key] = !(routesEnabled[key] !== false);
 				call("jingqing/panel/update", { patch: { routesEnabled: patch } })
-					.then((res) => { if (res && res.state) onState(res.state); })
+					.then((res) => { if (res && res.version) onState(res); })
 					.catch(() => {});
 			};
 			const rescan = () => {
 				call("jingqing/panel/rescan", {})
-					.then((res) => { if (res && res.state) onState(res.state); })
+					.then((res) => { if (res && res.version) onState(res); })
 					.catch(() => {});
 			};
 			const rows = vision.map((v) => {
@@ -475,15 +528,12 @@ window.__ModuleLoader__.load({
 		 * @param ctx - client root context.
 		 */
 		function apply(ctx) {
-			ctx.effect(() => {
-				const dispose = ctx.slots.inject("settings.section", () => ctx.slots.register({
-					name: "settings.section",
-					id: "jingqing",
-					order: 25,
-					label: "鲸晴",
-				}, Panel));
-				return () => dispose();
-			}, "jingqing: settings section");
+			ctx.effect(() => ctx.slots.inject("settings.section", () => ctx.slots.register({
+				name: "settings.section",
+				id: "jingqing",
+				order: 25,
+				label: "鲸晴",
+			}, Panel)), "jingqing: settings section");
 		}
 		//#endregion
 
