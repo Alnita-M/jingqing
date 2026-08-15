@@ -18,9 +18,11 @@
  */
 import { defineTool } from '@deepseek-ai/dsh-tools'
 
-export default {
-  inject: ['timer', 'tools', 'llm', 'settings', 'credentials', 'attachments'],
-  apply(ctx) {
+const name = "jingqing"
+
+const inject = ["timer", "tools", "llm", "settings", "credentials", "attachments"]
+
+function apply(ctx) {
     /* ==================== [0] 配置 ==================== */
     const PLUGIN_LABEL = '鲸晴'
     const TOOL_NAME = 'jingqing_describe_image'
@@ -745,7 +747,169 @@ export default {
     })
     ctx.tools.register(diagTool)
 
-    /* ==================== [10] 启动 ==================== */
+    /* ==================== [10] 桥接接口(供动态面板包读写,共享 llm 对象) ==================== */
+    // 动态面板包(Client UI)通过 llm.__jingqing_static 读取/修改本插件的真实配置,
+    // 实现「识图核心静态永久 + 面板动态按需激活」的共存模式。
+    function panelState() {
+      const sel = currentSelectionOf()
+      const state = llm && llm[wrapKey]
+      let admissionView = null
+      try {
+        if (llm && sel.provider && sel.model) {
+          const info = llm.resolveModelInfo(sel.provider, sel.model)
+          if (info && Array.isArray(info.inputModalities)) admissionView = info.inputModalities
+        }
+      } catch (e) { log('warn', 'panel-state', String(e)) }
+      const sorted = sortedVisionModels()
+      return {
+        version: VERSION,
+        config: {
+          enabled: config.enabled,
+          routesEnabled: { ...config.routesEnabled },
+          routeOrder: Array.isArray(config.routeOrder) ? [...config.routeOrder] : [],
+          timeoutMs: config.timeoutMs,
+          maxTokens: config.maxTokens,
+          temperature: config.temperature,
+        },
+        runtime: {
+          running: true,
+          mode: 'static',
+          wrapActive: Boolean(state),
+          admissionView,
+          wouldReject: Array.isArray(admissionView) && !admissionView.includes('image'),
+        },
+        scan: {
+          ready: scanResult.ready,
+          scannedAt: scanResult.scannedAt,
+          providers: scanResult.providers,
+          visionModels: sorted.map((v) => ({
+            provider: v.provider,
+            id: v.id,
+            name: v.name,
+            cost: v.cost,
+            score: v.score,
+            enabled: isRouteEnabled(v.provider, v.id),
+            credential: credentialOf(v.provider),
+          })),
+          missingCredentials: scanResult.missingCredentials,
+          errors: scanResult.errors,
+        },
+        guidance: {
+          reason: detectGuidanceReason(),
+          hasVisionModel: hasVisionModel(),
+        },
+        recommended: recommendedOf().map((r) => r.provider + '/' + r.model),
+        routes: pickRoutesInfo(),
+        logs: logBuffer.slice(-20),
+      }
+    }
+
+    const bridgeKey = '__jingqing_static'
+    if (llm && !llm[bridgeKey]) {
+      llm[bridgeKey] = {
+        mode: 'static',
+        version: VERSION,
+        getState: () => panelState(),
+        applyPatch: (patch) => {
+          const result = applyConfigPatch(patch)
+          if (!result.ok) {
+            log('warn', 'bridge-update-rejected', result.error)
+            return { error: result.error, state: panelState() }
+          }
+          log('info', 'bridge-update', result.config)
+          return { state: panelState() }
+        },
+        rescan: async () => {
+          await scan()
+          return { state: panelState() }
+        },
+        reset: () => {
+          config = { ...DEFAULT_CONFIG, routesEnabled: {} }
+          ensureRouteKeys()
+          log('info', 'bridge-reset', '配置已恢复默认')
+          return { state: panelState() }
+        },
+        getLogs: (limit, level) => {
+          const n = Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 100) : 100
+          const filtered = level === 'all' || !level ? logBuffer : logBuffer.filter((e) => e.level === level)
+          return { logs: filtered.slice(-n) }
+        },
+      }
+      log('info', 'bridge', '已挂载 llm.__jingqing_static 桥接(供动态面板包)')
+    }
+
+    /* ==================== [11] HTTP API 端点(静态面板数据源) ==================== */
+    // 静态 Client 半区通过 fetch("/api/jingqing/*") 获取数据(与 dsh-usage-stats 同机制)
+    const webServer = ctx.get('webServer')
+    if (webServer && typeof webServer.register === 'function') {
+      const json = (res, status, value) => {
+        res.writeHead(status, { 'content-type': 'application/json' })
+        res.end(JSON.stringify(value))
+      }
+      ctx.effect(() => webServer.register({
+        kind: 'exact',
+        path: '/api/jingqing/state',
+        handler: (_req, res) => json(res, 200, { ok: true, state: panelState() }),
+      }), 'jingqing: state endpoint')
+      ctx.effect(() => webServer.register({
+        kind: 'exact',
+        path: '/api/jingqing/update',
+        handler: (req, res) => {
+          let body = ''
+          req.on('data', (chunk) => { body += chunk })
+          req.on('end', () => {
+            try {
+              const args = JSON.parse(body || '{}')
+              const result = applyConfigPatch(args && args.patch)
+              if (!result.ok) { json(res, 400, { ok: false, error: result.error, state: panelState() }); return }
+              log('info', 'http-update', result.config)
+              json(res, 200, { ok: true, state: panelState() })
+            } catch (e) {
+              json(res, 400, { ok: false, error: String(e), state: panelState() })
+            }
+          })
+        },
+      }), 'jingqing: update endpoint')
+      ctx.effect(() => webServer.register({
+        kind: 'exact',
+        path: '/api/jingqing/rescan',
+        handler: async (_req, res) => {
+          await scan()
+          json(res, 200, { ok: true, state: panelState() })
+        },
+      }), 'jingqing: rescan endpoint')
+      ctx.effect(() => webServer.register({
+        kind: 'exact',
+        path: '/api/jingqing/logs',
+        handler: (req, res) => {
+          try {
+            const url = new URL(req.url, 'http://localhost')
+            const limit = Number(url.searchParams.get('limit') || 100)
+            const level = url.searchParams.get('level') || 'all'
+            const n = Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 100) : 100
+            const filtered = level === 'all' ? logBuffer : logBuffer.filter((e) => e.level === level)
+            json(res, 200, { ok: true, logs: filtered.slice(-n) })
+          } catch (e) {
+            json(res, 400, { ok: false, error: String(e) })
+          }
+        },
+      }), 'jingqing: logs endpoint')
+      ctx.effect(() => webServer.register({
+        kind: 'exact',
+        path: '/api/jingqing/reset',
+        handler: (_req, res) => {
+          config = { ...DEFAULT_CONFIG, routesEnabled: {} }
+          ensureRouteKeys()
+          log('info', 'http-reset', '配置已恢复默认')
+          json(res, 200, { ok: true, state: panelState() })
+        },
+      }), 'jingqing: reset endpoint')
+      log('info', 'http-api', '已注册 /api/jingqing/* 端点(供静态面板)')
+    } else {
+      log('warn', 'http-api', 'webServer 服务不可用,跳过 HTTP 端点注册')
+    }
+
+    /* ==================== [12] 启动 ==================== */
     void scan()
     log('info', 'started', {
       version: VERSION,
@@ -753,5 +917,6 @@ export default {
       mode: 'static',
       modalityWrapActive: Boolean(llm && llm[wrapKey]),
     })
-  },
 }
+
+export { apply, inject, name }

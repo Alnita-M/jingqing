@@ -5,14 +5,18 @@
   "type": "module",
   "main": "install.mjs",
   "bin": {
-    "jingqing-install": "install.mjs"
+    "jingqing-install": "install.mjs",
+    "jingqing-static": "static/install-static.mjs"
   },
   "files": [
     "install.mjs",
     "plugin-host.js",
     "plugin-client.js",
-    "static/plugins/jingqing-host.js",
     "static/install-static.mjs",
+    "static/jingqing/package.json",
+    "static/jingqing/lib/index.js",
+    "static/jingqing/lib/client.js",
+    "static/jingqing/cordis.patch.yml",
     "README.md",
     "LICENSE"
   ],
