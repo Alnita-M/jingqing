@@ -195,6 +195,12 @@ chmod +x install.sh
 - 子智能体会话的图片限制不在本插件处理范围
 - 识图结果为文本描述，不保留像素级信息；精读场景（如 OCR 版面还原）建议选原生视觉模型
 
+ ## 写在最后
+
+这是一个重复造轮子的项目，虽然这个想法是我自己想到的，但是当我着手做的时候才发现，这么多人都比我更早的有了这个想法，并且更进一步做出了像素级的识别，如[@anionex/dsh-vision-toolkit](https://github.com/Anionex/dsh-vision-toolkit)与[@ysr666/dsh-vision-router](https://github.com/ysr666/dsh-vision-router)
+
+但是无论如何，这是我迈出的第一步，但愿未来的每一步都会逐渐扫清我的迷茫，每一个未来都由这里迈出
+
 ## 许可证
 
 [MIT](LICENSE)
@@ -205,8 +211,4 @@ chmod +x install.sh
 
 ---
 
-## 写在最后
 
-这是一个重复造轮子的项目，虽然这个想法是我自己想到的，但是当我着手做的时候才发现，这么多人都比我更早的有了这个想法，并且更进一步做出了像素级的识别，如[@anionex/dsh-vision-toolkit](https://github.com/Anionex/dsh-vision-toolkit)与[@ysr666/dsh-vision-router](https://github.com/ysr666/dsh-vision-router)。
-
-但是无论如何，这是我迈出的第一步，但愿未来的每一步都会逐渐扫清我的迷茫，每一个未来都由这里迈出
