@@ -2,6 +2,16 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.0.1] - 2026-08-15
+
+### 新增
+- **一键安装助手 `install.mjs`**：运行 `node install.mjs` 自动把完整安装消息
+  （含全部源码与步骤）复制到剪贴板并生成 `INSTALL.md`；用户粘贴到任意 DSH
+  会话即完成安装，无需手动复制源码
+  - 跨平台剪贴板适配（Windows PowerShell / macOS pbcopy / Linux xclip·xsel）
+  - Windows 超长文本走临时文件管道，规避命令行 32K 长度限制
+- README 新增「一键安装(推荐)」章节
+
 ## [1.0.0] - 2026-08-15
 
 ### 发布说明

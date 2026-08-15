@@ -50,7 +50,33 @@
 所选模型基于描述继续推理 → 输出最终回答
 ```
 
-## 安装
+## 一键安装(推荐)
+
+鲸晴提供**一键安装助手**,不需要手动复制任何源码:
+
+```bash
+# 1. 获取项目(任选一种)
+git clone https://github.com/Alnita-M/jingqing.git
+# 或: 直接下载仓库 ZIP 并解压
+
+# 2. 进入 release 目录并运行安装助手
+cd jingqing/release
+node install.mjs
+```
+
+安装助手会自动把完整的安装消息**复制到剪贴板**(同时生成 `INSTALL.md` 文件)。
+
+然后:
+
+```text
+1. 打开 DeepSeek Harness 任意会话
+2. 直接粘贴(Ctrl+V)并按回车
+3. AI 自动完成插件定义与激活 —— 安装完成 ✅
+```
+
+> 需要 Node.js 18+。Windows / macOS / Linux 均可(脚本会自动适配剪贴板命令)。
+
+## 手动安装
 
 鲸晴是**动态 Cordis 插件**，随会话运行，无需落盘安装：
 
@@ -150,3 +176,11 @@
 ## 变更记录
 
 见 [CHANGELOG.md](CHANGELOG.md)。
+
+---
+
+## 写在最后
+
+这是一个重复造轮子的项目，虽然这个想法是我自己想到的，但是当我着手做的时候才发现，这么多人都比我更早的有了这个想法，并且更进一步做出了像素级的识别，如[@anionex/dsh-vision-toolkit](https://github.com/Anionex/dsh-vision-toolkit)与[@ysr666/dsh-vision-router](https://github.com/ysr666/dsh-vision-router)。
+
+但是无论如何，这是我迈出的第一步，但愿未来的每一步都会逐渐扫清我的迷茫，每一个未来都由这里迈出
