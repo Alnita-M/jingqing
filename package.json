@@ -1,7 +1,7 @@
 {
   "name": "jingqing",
-  "version": "1.0.1",
-  "description": "鲸晴 JingQing - 让 DeepSeek Harness 纯文本模型也能识图：MiMo 识别 + 所选模型推理（动态 Cordis 插件 + 一键安装）",
+  "version": "1.1.0",
+  "description": "鲸晴 JingQing - 让 DeepSeek Harness 纯文本模型也能识图：MiMo 识别 + 所选模型推理（动态/静态 Cordis 插件 + 一键安装）",
   "type": "module",
   "main": "install.mjs",
   "bin": {
@@ -11,6 +11,8 @@
     "install.mjs",
     "plugin-host.js",
     "plugin-client.js",
+    "static/plugins/jingqing-host.js",
+    "static/install-static.mjs",
     "README.md",
     "LICENSE"
   ],

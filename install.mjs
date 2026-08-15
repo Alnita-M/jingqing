@@ -65,9 +65,14 @@ ${client}
 ========== [CLIENT 源码] 结束 ==========
 `
 
-/* ---------- 写入 INSTALL.md ---------- */
-const outPath = path.join(here, 'INSTALL.md')
-fs.writeFileSync(outPath, message, 'utf8')
+/* ---------- 写入 INSTALL.md(全局安装时包目录可能只读,回退到用户目录) ---------- */
+let outPath = path.join(here, 'INSTALL.md')
+try {
+  fs.writeFileSync(outPath, message, 'utf8')
+} catch {
+  outPath = path.join(os.homedir(), 'jingqing-INSTALL.md')
+  fs.writeFileSync(outPath, message, 'utf8')
+}
 
 /* ---------- 复制到剪贴板(尽力而为) ---------- */
 let copied = false

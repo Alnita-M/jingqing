@@ -2,6 +2,20 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.1.0] - 2026-08-15
+
+### 新增
+- **路线 B:静态插件(永久生效)**
+  - `static/plugins/jingqing-host.js`:静态版 Host 插件,通过 profile 的
+    `cordis.patch.yml` 挂载,DSH 重启后自动加载 —— 无需在会话中重新激活
+  - 工具注册改用 `defineTool` from `@deepseek-ai/dsh-tools` + `ctx.tools.register`
+    (与动态 harness DSL 同源,行为一致:准入绕过/识图工具/诊断/引导/扫描)
+  - `static/install-static.mjs`:一键安装/移除脚本(自动复制插件 + 写入
+    `insert` 补丁条目,处理 `[]` 占位冲突;幂等;可回滚)
+  - 已验证:headless 真实加载,工具注册、准入绕过、模型扫描均正常
+  - 说明:静态版为 Host-only(无 Client 设置面板,面板仍走动态版);
+    Client 半区静态化需要 web 端构建管线,另行评估
+
 ## [1.0.1] - 2026-08-15
 
 ### 新增

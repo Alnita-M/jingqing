@@ -54,14 +54,31 @@
 
 鲸晴提供**一键安装**,不需要手动复制任何源码。**任选一种**方式:
 
-**npm 一条命令(最快,无需下载仓库):**
+**静态插件(推荐 · 永久生效,重启不丢):**
+```bash
+cd jingqing/static          # 或 npm 包内 static/ 目录
+node install-static.mjs     # 安装到 web profile
+# 重启 DeepSeek Harness 后,插件自动加载并永久生效:
+# - 无需在会话中重新激活、无需粘贴安装消息
+# - 工具 jingqing_describe_image / jingqing_diag 始终可用
+# - 撤销:node install-static.mjs --remove
+```
+> 这是「装一次,一直用」的推荐方式,适合长期使用者。
+> 静态插件通过 DSH profile 的 cordis.patch.yml 挂载,重启自动加载。
+
+**npm 全局安装(动态,装一次长期复用):**
+```bash
+npm install -g jingqing   # 装一次(首次)
+jingqing                  # 以后随时运行,离线秒开
+```
+> 第一次安装后,`jingqing` 命令永久可用:每次运行都会把完整安装消息复制到剪贴板
+> (无需联网、无需重复 npx)。鲸晴发布页:https://www.npmjs.com/package/jingqing
+
+**不想全局安装?用 npx 临时跑一次:**
 ```bash
 npx jingqing
-# 安装消息自动复制到剪贴板 ✅
-# 然后:打开 DSH 任意会话 → 粘贴(Ctrl+V) → 回车 → 完成
+# 自动临时下载并运行,用完自动清理(每次需要联网)
 ```
-> 鲸晴已发布到 npm:https://www.npmjs.com/package/jingqing
-> `npx jingqing` 会自动下载并运行一键安装助手(需 Node.js 18+,无需提前安装任何东西)
 
 **Windows(双击即可):**
 ```text
@@ -80,16 +97,10 @@ chmod +x install.sh
 # 安装消息自动复制到剪贴板,然后在 DSH 会话中粘贴并回车即可
 ```
 
-**通用方式(Node.js 18+):**
-```bash
-cd jingqing/release
-node install.mjs
-# 同上:消息已复制到剪贴板 + 生成 INSTALL.md 备用
-```
-
-> 四种方式都只做一件事:把完整的安装消息(含全部源码与步骤)复制到剪贴板。
-> 最后一步"在会话中粘贴回车"由 AI 完成定义与激活——这是 DSH 动态插件
-> 的设计(插件需经会话内 AI 与授权流程),无法完全脱离会话。
+> 无论哪种方式,最后一步"在会话中粘贴回车"由 AI 完成定义与激活——这是 DSH
+> 动态插件的设计(插件需经会话内 AI 与授权流程),无法完全脱离会话。
+> 每次 DSH 重启后需重新激活,建议把第一次生成的安装消息保存下来复用
+> (如收藏在笔记中,重启后直接复制粘贴即可,无需重跑命令)。
 
 ## 手动安装
 
