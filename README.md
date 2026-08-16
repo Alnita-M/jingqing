@@ -184,6 +184,7 @@ chmod +x install.sh
 | --- | --- |
 | 日志无 `started` | 插件未激活，重新 `cordis_run` |
 | 上传图片仍被拦截 | 调用 `jingqing_diag` 检查 `wrapperActive` / `wouldReject`；进程重启后需重新激活插件 |
+| 上传图片报 `UNSUPPORTED_CONTENT` / run 直接失败 | 静态版检查 `jingqing_diag` 的 `streamWrapActive` / `streamWithRegActive` 是否均为 `true`；为 `false` 说明运行的是未含推理净化的旧版，请升级到静态包 `v1.0.0-static-p1`（npm 包 1.1.2+）并重启 DSH |
 | 出现配置引导 notice | 环境缺少识图模型/凭据，按引导完成配置（推荐 mimoV2.5） |
 | 工具报"找不到附件" | 模型臆造了 `image_ref`；检查 notice 中的附件 ID |
 | 所有路由失败 | 检查 `XIAOMI_API_KEY` / `OPENCODE_GO_API_KEY` 与网络；日志 `describe-route-failed` |

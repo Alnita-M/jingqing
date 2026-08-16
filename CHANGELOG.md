@@ -2,6 +2,29 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.1.2] - 2026-08-16
+
+### 修复
+- **静态版合入推理输入净化(JQ-2026-001 正式版修复)**
+  - 静态包 Host 半区内置 `llm.stream` + `llm.streamWithRegistration` 进程级净化包装
+    （仅当目标模型原生不支持 image 时，把 image block 替换为携带附件 ID 的占位文本；
+    视觉模型原样透传）——纯文本模型会话上传图片不再触发
+    `UNSUPPORTED_CONTENT`，run 不再失败，历史残留图片也会被净化、会话可自行恢复
+  - 内部版本号升至 `v1.0.0-static-p1`（`jingqing_diag` 与面板可确认是否含本修复）
+
+### 新增
+- **诊断增强**：静态版 `jingqing_diag` 与面板状态新增
+  `streamWrapActive` / `streamWithRegActive` 字段，净化包装缺失可直接从诊断快照暴露
+  （对齐动态版 v6.1 诊断能力）
+- README「故障排查」表新增 `UNSUPPORTED_CONTENT` 条目（含处理指引）
+
+## [1.1.1] - 2026-08-16
+
+### 修复
+- **npm bin 歧义修正**：`npx jingqing` 报 "could not determine executable to run"（包内两个 bin）；
+  默认命令改为 `jingqing`（一键安装助手），静态安装命令为 `jingqing-static`
+  （等效 `node install-static.mjs`）
+
 ## [1.1.0] - 2026-08-15
 
 ### 新增

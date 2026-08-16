@@ -1,5 +1,5 @@
 /**
- * 鲸晴 JingQing · 静态 Host 插件(v1.0.0-static)
+ * 鲸晴 JingQing · 静态 Host 插件(v1.0.0-static-p1)
  * ============================================================
  * 路线 B:静态 Cordis 插件,通过 profile 的 cordis.patch.yml 挂载,
  * DSH 重启后自动加载 —— 无需每次在会话中重新激活。
@@ -27,7 +27,7 @@ function apply(ctx) {
     const PLUGIN_LABEL = '鲸晴'
     const TOOL_NAME = 'jingqing_describe_image'
     const DIAG_TOOL_NAME = 'jingqing_diag'
-    const VERSION = 'v1.0.0-static'
+    const VERSION = 'v1.0.0-static-p1'
     const RECOMMENDED_VISION_ROUTES = [
       { provider: 'xiaomi', model: 'mimo-v2.5' },
       { provider: 'opencode-go', model: 'mimo-v2.5' },
@@ -382,6 +382,114 @@ function apply(ctx) {
       return undefined
     }
 
+    /* ==================== [5.5] 推理输入净化(v6.1,进程级幂等) ==================== */
+    // 根因:pi-ai 适配器 stream() 用自身 catalog 的 model.input 检查图片
+    // (node_modules/@deepseek-ai/dsh-llm-pi-ai/lib/index.js:827:
+    //   containsImage && !model.input.includes("image") → 抛 UNSUPPORTED_CONTENT),
+    // 与 resolveModelInfo 无关,准入绕过影响不到它。纯文本模型收到含 image block
+    // 的消息即抛错,整个 run 失败;失败后图片留在历史,后续 run 重放继续失败。
+    // 本包装在消息进入适配器前,仅当目标模型【原生不支持 image】时把 image block
+    // (含 tool-result 嵌套)替换为携带附件 ID 的占位文本;视觉模型原样透传。
+    // 覆盖两条推理路径:llm.stream 与 llm.streamWithRegistration(agent loop 的
+    // prepareCall.stream 最终经后者,dsh-agent-loop/lib/index.js:616)。
+    const STREAM_WRAP_KEY = '__jingqing_stream_wrap'
+    function attachmentIdOf(ref) {
+      if (!ref || typeof ref !== 'object') return String(ref)
+      return String(ref.attachmentId ?? ref.id ?? 'unknown')
+    }
+    function blocksHaveImage(blocks) {
+      return Array.isArray(blocks) && blocks.some((b) => b && typeof b === 'object' && (
+        b.type === 'image' || (b.type === 'tool-result' && blocksHaveImage(b.content))
+      ))
+    }
+    function sanitizeBlocks(blocks) {
+      const out = []
+      for (const block of blocks) {
+        if (!block || typeof block !== 'object') { out.push(block); continue }
+        if (block.type === 'image') {
+          out.push({
+            type: 'text',
+            text: '【用户上传的图片,附件 ID:' + attachmentIdOf(block.attachment) + '】' +
+              '当前模型不支持直接查看图片,请调用 ' + TOOL_NAME + ' 工具获取图片内容。',
+          })
+        } else if (block.type === 'tool-result' && blocksHaveImage(block.content)) {
+          out.push({ ...block, content: sanitizeBlocks(block.content) })
+        } else {
+          out.push(block)
+        }
+      }
+      return out
+    }
+    function sanitizeMessagesIfNeeded(messages) {
+      if (!Array.isArray(messages)) return messages
+      let changed = false
+      const out = messages.map((msg) => {
+        if (!msg || typeof msg !== 'object' || !blocksHaveImage(msg.content)) return msg
+        changed = true
+        return { ...msg, content: sanitizeBlocks(msg.content) }
+      })
+      return changed ? out : messages
+    }
+    if (llm && typeof llm.stream === 'function' && !llm[STREAM_WRAP_KEY]) {
+      const originalStream = llm.stream
+      const self = llm
+      llm.stream = function (options) {
+        const opts = options && typeof options === 'object' ? options : {}
+        const sanitized = sanitizeMessagesIfNeeded(opts.messages)
+        if (sanitized === opts.messages) return originalStream.call(self, opts)
+        return (async function* () {
+          let nativeMods
+          try { nativeMods = await originalInputModalities(opts.provider, opts.model) } catch (e) { nativeMods = undefined }
+          const supportsImage = Array.isArray(nativeMods) && nativeMods.includes('image')
+          if (supportsImage) {
+            yield* originalStream.call(self, opts)
+          } else {
+            log('info', 'stream-sanitize', {
+              provider: String(opts.provider),
+              model: String(opts.model),
+              nativeMods: nativeMods === undefined ? 'unknown' : nativeMods,
+            })
+            yield* originalStream.call(self, { ...opts, messages: sanitized })
+          }
+        })()
+      }
+      llm[STREAM_WRAP_KEY] = true
+      log('info', 'stream-wrap', '已安装 llm.stream 输入净化包装(v5,进程级,幂等)')
+    } else if (!(llm && typeof llm.stream === 'function')) {
+      log('warn', 'stream-wrap', 'llm 服务不可用,跳过输入净化')
+    }
+
+    const STREAM_WITH_REG_KEY = '__jingqing_stream_with_reg_wrap'
+    if (llm && typeof llm.streamWithRegistration === 'function' && !llm[STREAM_WITH_REG_KEY]) {
+      const originalSWR = llm.streamWithRegistration
+      const self = llm
+      llm.streamWithRegistration = function (options, prepared) {
+        const opts = options && typeof options === 'object' ? options : {}
+        const sanitized = sanitizeMessagesIfNeeded(opts.messages)
+        if (sanitized === opts.messages) return originalSWR.call(self, opts, prepared)
+        return (async function* () {
+          let nativeMods
+          try { nativeMods = await originalInputModalities(opts.provider, opts.model) } catch (e) { nativeMods = undefined }
+          const supportsImage = Array.isArray(nativeMods) && nativeMods.includes('image')
+          if (supportsImage) {
+            yield* originalSWR.call(self, opts, prepared)
+          } else {
+            log('info', 'stream-sanitize', {
+              provider: String(opts.provider),
+              model: String(opts.model),
+              nativeMods: nativeMods === undefined ? 'unknown' : nativeMods,
+              via: 'streamWithRegistration',
+            })
+            yield* originalSWR.call(self, { ...opts, messages: sanitized }, prepared)
+          }
+        })()
+      }
+      llm[STREAM_WITH_REG_KEY] = true
+      log('info', 'stream-with-reg-wrap', '已安装 llm.streamWithRegistration 输入净化包装(v6,覆盖 agent loop prepareCall 路径)')
+    } else if (!(llm && typeof llm.streamWithRegistration === 'function')) {
+      log('warn', 'stream-with-reg-wrap', 'llm.streamWithRegistration 不可用,跳过(如推理仍失败请检查 dsh-llm 版本)')
+    }
+
     function currentSelectionOf(agent) {
       try {
         const adm = ctx.get('agentDefaultModel')
@@ -711,6 +819,8 @@ function apply(ctx) {
           mode: 'static',
           wrapInstalled: Boolean(state),
           wrapperActive: Boolean(state && llm && typeof llm.resolveModelInfo === 'function' && llm.resolveModelInfo !== state.original),
+          streamWrapActive: Boolean(llm && llm[STREAM_WRAP_KEY] && typeof llm.stream === 'function'),
+          streamWithRegActive: Boolean(llm && llm[STREAM_WITH_REG_KEY] && typeof llm.streamWithRegistration === 'function'),
           admissionView,
           originalView,
           wouldReject: Array.isArray(admissionView) && !admissionView.includes('image'),
@@ -775,6 +885,8 @@ function apply(ctx) {
           running: true,
           mode: 'static',
           wrapActive: Boolean(state),
+          streamWrapActive: Boolean(llm && llm[STREAM_WRAP_KEY]),
+          streamWithRegActive: Boolean(llm && llm[STREAM_WITH_REG_KEY]),
           admissionView,
           wouldReject: Array.isArray(admissionView) && !admissionView.includes('image'),
         },
