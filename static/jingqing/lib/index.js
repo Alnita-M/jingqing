@@ -44,6 +44,13 @@ function apply(ctx) {
       'opencode-go|kimi-k3': { input: 3.00, output: 15.00 },
       'opencode-go|qwen3.6-plus': { input: 0.50, output: 3.00 },
       'opencode-go|grok-4.5': { input: 2.00, output: 6.00 },
+      // DeepSeek V4 系列(2026-08-17 起官方峰谷定价,此处取高峰时段价;空闲时段为高峰一半。
+      // 官方人民币价:Flash 高峰 输入3.0/输出9.0 元,V4-Pro 高峰 输入9.0/输出27.0 元,
+      // 按 1 USD ≈ 7.2 CNY 换算;来源:DeepSeek 官方调价公告 2026-08-17)
+      'deepseek|deepseek-v4-flash': { input: 0.42, output: 1.25 },
+      'deepseek|deepseek-v4-pro': { input: 1.25, output: 3.75 },
+      'opencode-go|deepseek-v4-flash': { input: 0.42, output: 1.25 },
+      'opencode-go|deepseek-v4-pro': { input: 1.25, output: 3.75 },
     }
     const DEFAULT_CONFIG = {
       enabled: true,

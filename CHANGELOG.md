@@ -2,6 +2,16 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.1.3] - 2026-08-17
+
+### 变更
+- **调整了deepseek涨价后的价格**:DeepSeek 官方自 2026-08-17 0 时起对 V4 系列
+  采用峰谷定价(高峰时段为空闲时段两倍),同步更新内置成本表:
+  - 新增 `deepseek|deepseek-v4-flash`、`deepseek|deepseek-v4-pro` 与
+    `opencode-go` 下的同名条目(高峰价,按 1 USD ≈ 7.2 CNY 换算为美元/百万 token)
+  - V4-Flash:高峰 输入 3.0 / 输出 9.0 元;V4-Pro:高峰 输入 9.0 / 输出 27.0 元
+    (空闲时段为高峰一半)
+
 ## [1.1.2] - 2026-08-16
 
 ### 修复
