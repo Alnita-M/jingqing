@@ -36,6 +36,9 @@ const home = process.env.DSH_HOME || path.join(os.homedir(), '.dsh')
 const profile = process.argv[2] === '--remove' ? (process.argv[3] || 'web') : (process.argv[2] || 'web')
 const remove = process.argv.includes('--remove')
 
+// J7 加固:profile 参数直接拼入路径,拒绝路径分隔符与跳级(本地自用,防手误/防注入)
+if (/[\\/]|\.\./.test(profile)) fail('profile 参数不合法(不允许路径分隔符或 ..): ' + profile)
+
 const profilesNodeModules = path.join(home, 'profiles', 'node_modules')
 const pkgDir = path.join(profilesNodeModules, 'jingqing')
 const patchFile = path.join(home, 'profiles', profile, 'cordis.patch.yml')
