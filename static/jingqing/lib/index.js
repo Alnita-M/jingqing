@@ -1,5 +1,5 @@
 /**
- * 鲸晴 JingQing · 静态 Host 插件(v1.1.7)
+ * 鲸晴 JingQing · 静态 Host 插件(v1.1.8)
  * ============================================================
  * 版本说明:内部版本直接使用发行版本号(v1.1.x),面板/诊断显示与 npm 包一致,
  * 避免旧内部线(v1.0.0-static-pX)前缀造成"仍是旧版"的误读。
@@ -29,7 +29,7 @@ function apply(ctx) {
     const PLUGIN_LABEL = '鲸晴'
     const TOOL_NAME = 'jingqing_describe_image'
     const DIAG_TOOL_NAME = 'jingqing_diag'
-    const VERSION = 'v1.1.7'
+    const VERSION = 'v1.1.8'
     const RECOMMENDED_VISION_ROUTES = [
       { provider: 'xiaomi', model: 'mimo-v2.5' },
       { provider: 'opencode-go', model: 'mimo-v2.5' },

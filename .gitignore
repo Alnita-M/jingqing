@@ -17,3 +17,6 @@ Thumbs.db
 # 测试临时文件
 test-fixtures/upload-*.png
 test-fixtures/*.tmp
+
+# 安装助手生成物(每次运行 install.mjs 都会重写)
+INSTALL.md

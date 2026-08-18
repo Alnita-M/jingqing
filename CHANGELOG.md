@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.1.8] - 2026-08-18
+
+### 清理
+- **移除仓库生成物 `INSTALL.md`**(77KB):它是 `install.mjs` 每次运行生成的安装消息;
+  已从 git 移除并加入 `.gitignore`,不再误入仓库。
+- **清理无效声明**:`static/jingqing/package.json` 删除引用不存在文件的
+  `bin`(jingqing-install → install.mjs)与 `files` 字段(static 包为安装源目录,
+  不发布,声明无效)。
+
 ## [1.1.7] - 2026-08-18
 
 ### 变更
