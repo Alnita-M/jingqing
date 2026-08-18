@@ -1,7 +1,7 @@
 {
   "name": "jingqing",
   "description": "鲸晴 JingQing - 让 DeepSeek Harness 纯文本模型也能识图:MiMo 识别 + 所选模型推理(静态插件包,重启永久生效)",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "private": true,
   "repository": {
     "type": "git",
