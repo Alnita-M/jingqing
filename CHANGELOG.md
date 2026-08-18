@@ -2,6 +2,16 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.1.6] - 2026-08-17
+
+### 修复(与 DSH 0.1.0-rc.7 适配专项)
+- **J6 事件不兼容修复(cordis 4 适配)**:此前用 `ctx.on('service-added')` 等待
+  webServer 就绪,但 cordis 4.0.1 不存在该事件(实际为 `internal/service`,且
+  internal 前缀事件不向用户层转发),导致延迟就绪场景下 HTTP 端点永不补注册。
+  现改为监听 `internal/service` + 3 秒轮询兜底,覆盖任意启动时序与 headless。
+- **版本标识统一**:静态包 internal 版本升至 `v1.0.0-static-p3`;
+  静态包 `package.json` version 由 1.1.0 同步至 1.1.6(此前三层版本号不一致)。
+
 ## [1.1.5] - 2026-08-17
 
 ### 修复(跨机器安装链路专项检查)

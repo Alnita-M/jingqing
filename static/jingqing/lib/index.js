@@ -1,5 +1,5 @@
 /**
- * 鲸晴 JingQing · 静态 Host 插件(v1.0.0-static-p2)
+ * 鲸晴 JingQing · 静态 Host 插件(v1.0.0-static-p3)
  * ============================================================
  * 路线 B:静态 Cordis 插件,通过 profile 的 cordis.patch.yml 挂载,
  * DSH 重启后自动加载 —— 无需每次在会话中重新激活。
@@ -27,7 +27,7 @@ function apply(ctx) {
     const PLUGIN_LABEL = '鲸晴'
     const TOOL_NAME = 'jingqing_describe_image'
     const DIAG_TOOL_NAME = 'jingqing_diag'
-    const VERSION = 'v1.0.0-static-p2'
+    const VERSION = 'v1.0.0-static-p3'
     const RECOMMENDED_VISION_ROUTES = [
       { provider: 'xiaomi', model: 'mimo-v2.5' },
       { provider: 'opencode-go', model: 'mimo-v2.5' },
@@ -992,7 +992,7 @@ function apply(ctx) {
     // 静态 Client 半区通过 fetch("/api/jingqing/*") 获取数据(与 dsh-usage-stats 同机制)
     // J5 加固:写操作(update/rescan/reset)仅允许 POST + Origin 校验(仅本机),
     // rescan 5s 节流,update body 上限 64KB;GET 仅保留只读端点(state/logs)。
-    // J6 加固:webServer 未就绪时监听 service-added,就绪后自动补注册。
+    // J6 加固:webServer 未就绪时监听 internal/service(cordis 4)+ 轮询兜底。
     const json = (res, status, value) => {
       res.writeHead(status, { 'content-type': 'application/json' })
       res.end(JSON.stringify(value))
@@ -1104,13 +1104,21 @@ function apply(ctx) {
       return true
     }
     if (!registerHttpApi()) {
-      reg.log('warn', 'http-api', 'webServer 尚未就绪,监听服务出现后自动补注册')
+      // J6 加固(1.1.6,cordis 4 适配):webServer 未就绪时补注册。
+      // 注意:cordis 4.0.1 不存在 'service-added' 事件(实际服务事件为
+      // internal/service,且 internal/ 前缀事件不会自动转呈给用户层),
+      // 直接监听 internal/service + 轮询兜底,覆盖任意启动时序/headless。
+      reg.log('warn', 'http-api', 'webServer 尚未就绪,监听 internal/service 并轮询等待')
       ctx.effect(() => {
-        const onServiceAdded = (name) => {
+        const onService = (name) => {
           if (name === 'webServer') registerHttpApi()
         }
-        ctx.on('service-added', onServiceAdded)
-        return () => ctx.off('service-added', onServiceAdded)
+        ctx.on('internal/service', onService)
+        const timer = setInterval(() => registerHttpApi(), 3000)
+        return () => {
+          ctx.off('internal/service', onService)
+          clearInterval(timer)
+        }
       })
     }
 
