@@ -3,7 +3,7 @@
  * 鲸晴 JingQing · 一键安装助手
  * ============================================================
  * 运行:  node install.mjs     (仓库内)
- *        npx jingqing-install (npm 包形式,发布后)
+ *        npx -y jingqing      (npm 包默认 bin,生成动态安装消息)
  *
  * 作用: 读取同目录下的 plugin-host.js / plugin-client.js(v1.0.0),
  *       生成一条【自包含安装消息】——包含全部源码与安装步骤,
@@ -13,14 +13,19 @@
  *       这条消息并按回车,AI 会自动完成 cordis_define + cordis_run,
  *       无需手动复制源码、无需了解任何 Cordis 细节。
  *
- * 依赖: 仅 Node.js 18+(含 import.meta.dirname),无任何第三方包。
+ * 注意: 本助手生成的是【动态插件】安装消息(重启失效)。想要【永久生效
+ *       的静态插件(含设置面板)】,请运行:
+ *         npx -y -p jingqing jingqing-static
+ *
+ * 依赖: 仅 Node.js 18+,无任何第三方包。
  */
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import os from 'node:os'
 
-const here = import.meta.dirname
+const here = path.dirname(fileURLToPath(import.meta.url))
 const hostPath = path.join(here, 'plugin-host.js')
 const clientPath = path.join(here, 'plugin-client.js')
 

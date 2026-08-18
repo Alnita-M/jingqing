@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# 鲸晴 JingQing v1.0.0 - 一键安装(macOS / Linux)
+# 鲸晴 JingQing v1.1.x - 一键安装(macOS / Linux,动态助手)
 set -e
 cd "$(dirname "$0")"
 
@@ -8,6 +8,10 @@ if ! command -v node >/dev/null 2>&1; then
   echo "       请先安装 Node.js 18+ : https://nodejs.org"
   exit 1
 fi
+
+echo "提示:想要\"装一次、永久生效\"的静态插件(含面板),请改运行:"
+echo "     npx -y -p jingqing jingqing-static"
+echo ""
 
 node install.mjs
 

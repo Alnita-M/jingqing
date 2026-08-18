@@ -13,8 +13,9 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const imagePath = process.argv[2] || path.join(import.meta.dirname, 'sample.png')
+const imagePath = process.argv[2] || path.join(path.dirname(fileURLToPath(import.meta.url)), 'sample.png')
 const question = process.argv[3] || '请用中文详细描述这张图片的内容。'
 
 // ---------- 读取 API Key ----------

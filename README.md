@@ -52,35 +52,42 @@
 
 ## 一键安装(推荐)
 
-鲸晴提供**一键安装**,不需要手动复制任何源码。**任选一种**方式:
+鲸晴提供**一条命令安装**,不需要手动复制任何源码。**任选一种**方式:
 
-**静态插件(推荐 · 永久生效,重启不丢):**
+**静态插件(推荐 · 永久生效,重启不丢,含设置面板):**
 ```bash
-cd jingqing/static          # 或 npm 包内 static/ 目录
-node install-static.mjs     # 安装到 web profile
-# 重启 DeepSeek Harness 后,插件自动加载并永久生效:
-# - 无需在会话中重新激活、无需粘贴安装消息
-# - 工具 jingqing_describe_image / jingqing_diag 始终可用
-# - 撤销:node install-static.mjs --remove
-```
-> 这是「装一次,一直用」的推荐方式,适合长期使用者。
-> 静态插件通过 DSH profile 的 cordis.patch.yml 挂载,重启自动加载。
+# 方式 A:不克隆仓库,直接一条命令(推荐)
+npx -y -p jingqing jingqing-static
 
-**npm 全局安装(动态,装一次长期复用):**
+# 方式 B:已克隆仓库时,在 static/ 目录运行
+cd jingqing/static
+node install-static.mjs
+```
+> 安装后**重启 DeepSeek Harness**,插件自动加载并永久生效:
+> - 无需在会话中重新激活、无需粘贴安装消息
+> - 工具 jingqing_describe_image / jingqing_diag 始终可用
+> - 设置 → 鲸晴 面板常驻
+> - 撤销:`npx -y -p jingqing jingqing-static --remove`(或 `node install-static.mjs --remove`)
+>
+> ⚠️ 注意 `-p` 不能省略:`npx jingqing jingqing-static` 会运行默认命令
+> 「动态安装助手」而不是静态安装器,两者完全不同。
+
+**npm 全局安装(动态助手,装一次长期复用):**
 ```bash
 npm install -g jingqing   # 装一次(首次)
-jingqing                  # 以后随时运行,离线秒开
+jingqing                  # 以后随时运行,复制动态安装消息
 ```
-> 第一次安装后,`jingqing` 命令永久可用:每次运行都会把完整安装消息复制到剪贴板
-> (无需联网、无需重复 npx)。鲸晴发布页:https://www.npmjs.com/package/jingqing
+> `jingqing` = 动态安装助手(生成安装消息,粘贴到 DSH 会话激活,重启失效);
+> `jingqing-static` = 静态安装器(永久,上一条)。**推荐直接使用静态路线。**
 
 **不想全局安装?用 npx 临时跑一次:**
 ```bash
-npx jingqing
+npx -y jingqing          # 动态助手(生成安装消息)
+npx -y -p jingqing jingqing-static   # 静态安装器(永久,推荐)
 # 自动临时下载并运行,用完自动清理(每次需要联网)
 ```
 
-**Windows(双击即可):**
+**Windows(双击即可,动态助手):**
 ```text
 1. 进入 release 目录
 2. 双击 install.bat(或命令行运行 install.bat)
@@ -97,10 +104,9 @@ chmod +x install.sh
 # 安装消息自动复制到剪贴板,然后在 DSH 会话中粘贴并回车即可
 ```
 
-> 无论哪种方式,最后一步"在会话中粘贴回车"由 AI 完成定义与激活——这是 DSH
-> 动态插件的设计(插件需经会话内 AI 与授权流程),无法完全脱离会话。
-> 每次 DSH 重启后需重新激活,建议把第一次生成的安装消息保存下来复用
-> (如收藏在笔记中,重启后直接复制粘贴即可,无需重跑命令)。
+> 动态路线最后一步"在会话中粘贴回车"由 AI 完成定义与激活——这是 DSH
+> 动态插件的设计(插件经会话内 AI 与授权流程)。每次 DSH 重启后需重新激活。
+> **静态路线不需要这些**——装一次、重启、永久生效,推荐。
 
 ## 手动安装
 
@@ -118,6 +124,8 @@ chmod +x install.sh
 
 | 项目 | 要求 |
 | --- | --- |
+| Node.js | **≥ 18**(安装助手与静态安装器);建议 Node 20+/22 LTS;需要 npm≥9 以支持 `npx -p` 语义 |
+| DeepSeek Harness | 当前稳定版(2026-08+,需支持 profile 的 cordis.patch.yml 挂载) |
 | 识图模型（任一） | `xiaomi/mimo-v2.5`（推荐）或 `opencode-go/mimo-v2.5`，或其他支持图片输入的模型 |
 | 凭据 | `XIAOMI_API_KEY`（小米官方 API）和/或 `OPENCODE_GO_API_KEY`（备用网关） |
 | 配置位置 | `~/.dsh/settings.yaml`（llm-pi-ai.providers）+ `~/.dsh/.credentials.yaml`（Key） |

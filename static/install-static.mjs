@@ -2,7 +2,7 @@
 /**
  * 鲸晴 JingQing · 静态插件安装器(路线 B,标准包格式)
  * ============================================================
- * 运行:  npx -y jingqing jingqing-static   (npm 包形式,推荐)
+ * 运行:  npx -y -p jingqing jingqing-static   (npm 包形式,推荐,无需克隆仓库)
  *        node install-static.mjs [profile] (仓库内)
  *
  * 作用: 把鲸晴静态插件包(含 Host + Client 双半区)复制到
@@ -13,25 +13,26 @@
  *       (与 dsh-usage-stats 的 npx 安装完全同机制)
  *
  * 用法:
- *   npx -y jingqing jingqing-static       # 一键安装到 web profile
- *   node install-static.mjs headless      # 安装到 headless profile
- *   node install-static.mjs --remove      # 移除(还原 cordis.patch.yml 备份)
+ *   npx -y -p jingqing jingqing-static # 一键安装到 web profile(推荐)
+ *   node install-static.mjs headless   # 安装到 headless profile
+ *   node install-static.mjs --remove   # 移除(还原 cordis.patch.yml 备份)
  */
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import os from 'node:os'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`鲸晴 JingQing 静态插件安装器(永久生效,含面板)
 用法:
-  npx -y jingqing jingqing-static        # 安装到 web profile(推荐)
-  node install-static.mjs [profile]      # 仓库内运行,默认 web
-  node install-static.mjs --remove       # 移除(还原备份)
+  npx -y -p jingqing jingqing-static   # 安装到 web profile(推荐)
+  node install-static.mjs [profile]    # 仓库内运行,默认 web
+  node install-static.mjs --remove     # 移除(还原备份)
 安装后重启 DeepSeek Harness,插件与设置面板自动加载。`)
   process.exit(0)
 }
 
-const here = import.meta.dirname
+const here = path.dirname(fileURLToPath(import.meta.url))
 const home = process.env.DSH_HOME || path.join(os.homedir(), '.dsh')
 const profile = process.argv[2] === '--remove' ? (process.argv[3] || 'web') : (process.argv[2] || 'web')
 const remove = process.argv.includes('--remove')
@@ -76,7 +77,8 @@ console.log('✅ 插件包已复制: ' + pkgDir)
 // 3. 备份并写入 patch(web profile)
 const patchDir = path.dirname(patchFile)
 fs.mkdirSync(patchDir, { recursive: true })
-if (!fs.existsSync(backupFile)) {
+// 仅当已存在原配置时才备份(全新环境无 cordis.patch.yml,直接创建即可)
+if (fs.existsSync(patchFile) && !fs.existsSync(backupFile)) {
   fs.copyFileSync(patchFile, backupFile)
   console.log('ℹ 已备份原配置: ' + backupFile)
 }

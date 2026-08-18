@@ -2,6 +2,26 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.1.5] - 2026-08-17
+
+### 修复(跨机器安装链路专项检查)
+- **修复空环境安装崩溃(致命)**:`install-static.mjs` 在全新电脑(尚无
+  `~/.dsh/profiles/<profile>/cordis.patch.yml`)上会因 `copyFileSync` 源文件不存在
+  抛 ENOENT 崩溃,留下半安装状态。现在仅当原配置存在时才备份,全新环境直接创建。
+  已用临时 DSH_HOME 端到端验证:全新安装 → 产物齐全 → 幂等重装(条目不重复) →
+  `--remove` 干净卸载。
+- **修复 npx 指令语义**:`npx jingqing jingqing-static` 实际运行的是默认 bin
+  「动态安装助手」而非静态安装器(实测确认),会装错。正确指令为
+  **`npx -y -p jingqing jingqing-static`**(`-p` 指定包后运行指定 bin);
+  README / 脚本注释 / `--help` 全文修正。
+- **Node 版本兼容**:`install.mjs`/`install-static.mjs`/`verify-mimo.mjs` 弃用
+  `import.meta.dirname`(仅 Node 20.11+),改用 `fileURLToPath(import.meta.url)`,
+  与 package.json `engines: >=18` 声明一致;README 前置条件补充
+  Node ≥ 18 / npm ≥ 9 / DSH 2026-08+ 要求。
+- **README 安装指引重写**:明确区分「静态安装器(`jingqing-static`,推荐,永久,含面板)」
+  与「动态助手(`jingqing`,生成消息,重启失效)」;新增无需克隆仓库的一条命令静态安装;
+  bat/sh 脚本标题与提示同步更新。
+
 ## [1.1.4] - 2026-08-17
 
 ### 安全与健壮性修复(依据安全审查报告,静态版升至 v1.0.0-static-p2)
